@@ -485,6 +485,26 @@ namespace ServiceStack.Text
             }
         }
 
+        /// <summary>
+        /// If you have properties of certain type that you want to remove from all your POCO objects
+        /// </summary>
+        private static Type[] sGlobalExcludedBaseTypes;
+        public static Type[] GlobalExcludedBaseTypes
+        {
+            get { return sGlobalExcludedBaseTypes; }
+            set { sGlobalExcludedBaseTypes = value; }
+        }
+        
+        /// <summary>
+        /// If you have properties with certain name that you want to remove from all your POCO objects
+        /// </summary>
+        private static string[] sGlobalExcludedProperties;
+        public static string[] GlobalExcludedProperties
+        {
+            get { return sGlobalExcludedProperties; }
+            set { sGlobalExcludedProperties = value; }
+        }
+
         public static void Reset()
         {
             foreach (var rawSerializeType in HasSerializeFn.ToArray())
@@ -492,6 +512,8 @@ namespace ServiceStack.Text
                 Reset(rawSerializeType);
             }
 
+            sGlobalExcludedProperties = null;
+            sGlobalExcludedBaseTypes = null;
             sModelFactory = ReflectionExtensions.GetConstructorMethodToCache;
             sTryToParsePrimitiveTypeValues = null;
             sConvertObjectTypesIntoStringDictionary = null;

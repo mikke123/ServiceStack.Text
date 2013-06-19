@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -20,43 +21,56 @@ namespace ServiceStack.Text
 		}
 	}
 
-	public static class TypeConfig<T>
-	{
-		private static readonly TypeConfig config;
+    public static class TypeConfig<T>
+    {
+        private static readonly TypeConfig config;
 
-		public static PropertyInfo[] Properties
-		{
-			get { return config.Properties; }
-			set { config.Properties = value; }
-		}
+        public static PropertyInfo[] Properties
+        {
+            get { return config.Properties; }
+            set { config.Properties = value; }
+        }
 
-		public static FieldInfo[] Fields
-		{
-			get { return config.Fields; }
-			set { config.Fields = value; }
-		}
+        public static FieldInfo[] Fields
+        {
+            get { return config.Fields; }
+            set { config.Fields = value; }
+        }
 
-		public static bool EnableAnonymousFieldSetters
-		{
-			get { return config.EnableAnonymousFieldSetterses; }
-			set { config.EnableAnonymousFieldSetterses = value; }
-		}
+        public static bool EnableAnonymousFieldSetters
+        {
+            get { return config.EnableAnonymousFieldSetterses; }
+            set { config.EnableAnonymousFieldSetterses = value; }
+        }
 
-		static TypeConfig()
-		{
-			config = new TypeConfig(typeof(T));
-			
-			var excludedProperties = JsConfig<T>.ExcludePropertyNames ?? new string[0];
+        static TypeConfig()
+        {
+            config = new TypeConfig(typeof (T));
 
-            var properties = excludedProperties.Any()
-                ? config.Type.GetSerializableProperties().Where(x => !excludedProperties.Contains(x.Name))
-                : config.Type.GetSerializableProperties();
+            var excludedProperties = JsConfig<T>.ExcludePropertyNames ?? new string[0];
+            var excludedGlobalBaseTypes = JsConfig.GlobalExcludedBaseTypes ?? new Type[0];
+            var excludedGlobalProperties = JsConfig.GlobalExcludedProperties ?? new string[0];
+
+            IEnumerable<PropertyInfo> properties = null;
+
+            if (excludedProperties.Any() || excludedGlobalBaseTypes.Any() || excludedGlobalProperties.Any())
+            {
+                properties = config.Type.GetSerializableProperties().
+                    Where(
+                        x =>
+                        !excludedProperties.Contains(x.Name) && !excludedGlobalProperties.Contains(x.Name) &&
+                        !excludedGlobalBaseTypes.Contains(x.PropertyType.BaseType));
+            }
+            else
+            {
+                properties = config.Type.GetSerializableProperties();
+            }
+
             Properties = properties.Where(x => x.GetIndexParameters().Length == 0).ToArray();
+            Fields = config.Type.GetSerializableFields().ToArray();
+        }
 
-			Fields = config.Type.GetSerializableFields().ToArray();
-		}
-
-		internal static TypeConfig GetState()
+        internal static TypeConfig GetState()
 		{
 			return config;
 		}
